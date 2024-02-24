@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABLER_HOME_BOT</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        #map-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #search-container {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        input[type="text"], input[type="submit"], .clear-button {
+            padding: 10px;
+            margin: 5px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.3s ease-in-out;
+        }
+        input[type="text"]:focus, input[type="submit"]:focus, .clear-button:focus {
+            border-color: #f9a825;
+        }
+        input[type="submit"]:hover, .clear-button:hover {
+            background-color: #45a049;
+            color: white;
+            transform: scale(1.1);
+        }
+        .clear-button {
+            background-color: rgba(255, 255, 255, 0.5);
+            color: black;
+        }
+        .drawer-image {
+            max-width: 100%;
+            height: auto;
+            display: none;
+            margin-top: 20px;
+        }
+        #results, #drawer-info {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+ <div id="header-image-container">
+        <img src="https://i.ibb.co/BnRmKXh/6688.png" alt="Header Image" style="width:2%;">
+    </div>
+    <div id="map-container">
+        <img src="https://i.ibb.co/r6ctyXv/TINY-FP.png" alt="居室平面圖" style="max-width:100%;height:auto;">
+    </div>
+
+    <div id="search-container">
+        <input type="text" id="search-box" placeholder="輸入物品名稱或櫃位編號...">
+        <input type="submit" id="search-btn" value="搜索">
+        <button type="button" class="clear-button" id="clear-btn">清除</button>
+    </div>
+
+    <div id="results">
+        <!-- 搜索結果將在這裡顯示 -->
+    </div>
+
+    <div id="drawer-info">
+        <!-- 抽屉信息和图片将在这里显示 -->
+    </div>
+
+    <script>
+        var database = {
+            "沛納海錶盒": { location: "A", drawer: "012", imageUrl: "https://i.ibb.co/vcw9hrZ/A.png" },
+            "鞋": { location: "A", drawer: "002到012", imageUrl: "https://i.ibb.co/vcw9hrZ/A.png" },
+            "中華電信小烏龜": { location: "A", drawer: "006", imageUrl: "https://i.ibb.co/vcw9hrZ/A.png" },
+			"小烏龜電扇": { location: "A", drawer: "006", imageUrl: "https://i.ibb.co/vcw9hrZ/A.png" },
+            "圓形地毯": { location: "B", drawer: "002", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"備用背包BOB": { location: "B", drawer: "002", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+            "腰包BOB": { location: "B", drawer: "003",  imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"夾克與外套": { location: "B", drawer: "003", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+            "眼藥膏": { location: "B", drawer: "004", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"蜂膠": { location: "B", drawer: "004", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"OK蹦": { location: "B", drawer: "004", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"人工皮": { location: "B", drawer: "004", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"藥品": { location: "B", drawer: "004", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"襪子": { location: "B", drawer: "004", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"拖鞋": { location: "B", drawer: "006", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"畫作": { location: "B", drawer: "005", imageUrl: "https://i.ibb.co/vBqmCSw/B.png" },
+			"MAC": { location: "C", drawer: "C", imageUrl: "https://i.ibb.co/FXgFFNM/C.png" },
+            "筆電": { location: "C", drawer: "C", imageUrl: "https://i.ibb.co/FXgFFNM/C.png" },
+			"搖桿": { location: "C", drawer: "C", imageUrl: "https://i.ibb.co/FXgFFNM/C.png" },
+            "電子貓":{ location: "C", drawer: "C", imageUrl: "https://i.ibb.co/FXgFFNM/C.png" },
+			"健身環": { location: "C", drawer: "C", imageUrl: "https://i.ibb.co/FXgFFNM/C.png" },
+            "室內溫度器": { location: "D", drawer: "D", imageUrl: "https://i.ibb.co/QkCCj9P/D.png" },
+			"BOB用品": { location: "D", drawer: "D", imageUrl: "https://i.ibb.co/QkCCj9P/D.png" },
+            "保溫杯": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"衛生杯盤": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"衛生紙": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"酒精飲料": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"珍珠粉": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"吹風機備用": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"贈品杯盤": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"新鍋具": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"保溫盒": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"維他命沖泡飲": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"保鍵品_新品": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"消毒紙巾": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"打火機": { location: "E", drawer: "003", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"咖啡": { location: "E", drawer: "002中", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"茶品": { location: "E", drawer: "002下", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"杯具": { location: "E", drawer: "2345", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"簽名球": { location: "E", drawer: "003", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"工具箱": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"TOTO料": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"電視架": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"廚房給皂液機": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"延長線": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"豆腐頭": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"IOT設備": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"春聯": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"膠帶": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"矽利康": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"燈泡": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"廁所五金": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"香芬機": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"LED燈泡_夜燈": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"捲尺": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"剪刀": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"美工刀": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"帳單": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"文具用品": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"鞋帶_新": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"巧固球網工具": { location: "E", drawer: "006上", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"加油站衛生紙": { location: "E", drawer: "001", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"去漬油": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"轉接插頭": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"玻璃貼": { location: "E", drawer: "006", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"油畫材料": { location: "E", drawer: "007", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"美術工具": { location: "E", drawer: "007", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"酒精補充液": { location: "E", drawer: "007", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"說明書": { location: "E", drawer: "007", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"新口罩": { location: "E", drawer: "007", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"龍眼乾": { location: "E", drawer: "008", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"啤酒": { location: "E", drawer: "008", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"餅乾": { location: "E", drawer: "008", imageUrl: "https://i.ibb.co/611sJMY/E.png" },
+			"糖果_龍鬚糖材料": { location: "F", drawer: "印表機上方", imageUrl: "https://example.com/default.png" },
+			"電動火鍋器材": { location: "F", drawer: "印表機上方", imageUrl: "https://example.com/default.png" },
+			"漏水檢查器": { location: "F", drawer: "水槽下方", imageUrl: "https://example.com/default.png" },
+			"廚房用品": { location: "F", drawer: "水槽下方", imageUrl: "https://example.com/default.png" },
+			"鍋碗瓢盆": { location: "F", drawer: "右側", imageUrl: "https://example.com/default.png" },
+			"玉米粉_龍鬚糖材料": { location: "F", drawer: "右側", imageUrl: "https://example.com/default.png" },
+			"備用鑰匙": { location: "F", drawer: "右上", imageUrl: "https://example.com/default.png" },
+			"新米": { location: "F", drawer: "印表機下方", imageUrl: "https://example.com/default.png" },
+			"A4紙": { location: "F", drawer: "印表機下方", imageUrl: "https://example.com/default.png" },
+            "牙刷充電器": { location: "G", drawer: "桌下櫃", imageUrl: "https://example.com/default.png" },
+			"備品": { location: "H", drawer: "桌下櫃", imageUrl: "https://example.com/default.png" },
+			"BOB用品": { location: "H", drawer: "窗旁", imageUrl: "https://example.com/default.png" },
+			"MOAI行李箱": { location: "I", drawer: "上方", imageUrl: "https://example.com/default.png" },
+			"MOMO行李箱": { location: "I", drawer: "上方", imageUrl: "https://example.com/default.png" },
+			"ANNIE行李箱": { location: "I", drawer: "上方", imageUrl: "https://example.com/default.png" },
+			"BOB夏衣": { location: "J", drawer: "飄窗下方", imageUrl: "https://example.com/default.png" },
+			"運動毛巾": { location: "J", drawer: "飄窗下方", imageUrl: "https://example.com/default.png" },
+			"BOB衣物": { location: "J", drawer: "左衣廚", imageUrl: "https://example.com/default.png" },
+			"ANNIE衣物": { location: "J", drawer: "右衣廚", imageUrl: "https://example.com/default.png" },
+			"女性備品": { location: "K", drawer: "床邊抽", imageUrl: "https://example.com/default.png" },
+            "床包": { location: "K", drawer: "床下", imageUrl: "https://example.com/default.png"},
+            "玩具": { location: "L", drawer: "L床下", imageUrl: "https://example.com/default.png" },
+			"地球儀": { location: "L", drawer: "R床下", imageUrl: "https://example.com/default.png" },
+            "書包": { location: "L", drawer: "L床前櫃", imageUrl: "https://example.com/default.png" },
+			"BOB文件": { location: "M", drawer: "E床下", imageUrl: "https://example.com/default.png" },
+			"磁磚": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"有色矽利康": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"油漆": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"電視支架SONY": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"巧固球架": { location: "N", drawer: "右牆", imageUrl: "https://example.com/default.png" },	
+			"滑板": { location: "N", drawer: "右牆", imageUrl: "https://example.com/default.png" },
+			"漏水檢查器": { location: "N", drawer: "洗衣機下", imageUrl: "https://example.com/default.png" },
+			"客製地毯": { location: "N", drawer: "洗衣機旁", imageUrl: "https://example.com/default.png" },
+			"電子花灑": { location: "N", drawer: "烘衣機旁", imageUrl: "https://example.com/default.png" },
+			"四方桌": { location: "N", drawer: "洗衣機旁", imageUrl: "https://example.com/default.png" },
+			"長方黑桌": { location: "沙發下", drawer: "掀開", imageUrl: "https://example.com/default.png" },
+			"戶外溫度器": { location: "N", drawer: "門邊", imageUrl: "https://example.com/default.png" },
+			"洗衣備品": { location: "N", drawer: "門邊", imageUrl: "https://example.com/default.png" },
+			"矽利康槍": { location: "N", drawer: "門邊", imageUrl: "https://example.com/default.png" },
+			"澆花器": { location: "N", drawer: "水槽下方", imageUrl: "https://example.com/default.png" },
+			"磁磚1": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"磁磚2": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"磁磚3": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"磁磚4": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"磁磚5": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+			"磁磚6": { location: "N", drawer: "黑箱內", imageUrl: "https://example.com/default.png" },
+            // 更多物品
+        };
+
+        document.getElementById('search-box').addEventListener('input', function(e) {
+            var inputVal = e.target.value.toLowerCase();
+            var suggestions = Object.keys(database).filter(function(key) {
+                return key.toLowerCase().includes(inputVal);
+            }).map(function(key) {
+                return key;
+            });
+
+            if (suggestions.length > 0 && inputVal !== '') {
+                document.getElementById('results').innerHTML = suggestions.join(", ");
+            } else {
+                document.getElementById('results').innerHTML = '';
+            }
+        });
+
+        document.getElementById('search-btn').addEventListener('click', function() {
+            var searchQuery = document.getElementById('search-box').value.toLowerCase();
+            var foundItem = Object.keys(database).find(key => key.toLowerCase().includes(searchQuery));
+            if (foundItem) {
+                var item = database[foundItem];
+                document.getElementById('results').innerHTML = "物品位置：" + item.location + "櫃，抽屜號：" + item.drawer;
+                document.getElementById('drawer-info').innerHTML = `<img src="${item.imageUrl}" alt="${item.location}櫃抽屜圖" class="drawer-image" style="display:block;">`;
+            } else {
+                document.getElementById('results').innerHTML = "未找到物品。";
+                document.getElementById('drawer-info').innerHTML = '';
+            }
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            document.getElementById('search-box').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('drawer-info').innerHTML = '';
+        });
+    </script>
+</body>
+</html>
